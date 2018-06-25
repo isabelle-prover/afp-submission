@@ -1,0 +1,8 @@
+#!/usr/bin/python3
+
+import sys
+sys.path.append("/opt/afpbuild/src")
+
+import server
+server.main()
+

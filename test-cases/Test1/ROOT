@@ -1,0 +1,6 @@
+
+chapter AFP
+
+session Test1 (AFP) = HOL +
+  theories
+    "Theory"
