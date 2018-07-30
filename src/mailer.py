@@ -17,7 +17,7 @@ def email_regex(addr):
 def send(tos, ccs, subject, text):
     try:
         if config.MAILSSL:
-            smtp = smtplib.SMTP_SSL(host = config.MAILSERVER, port = config.MAILSERVERPORT, 
+            smtp = smtplib.SMTP_SSL(host = config.MAILSERVER, port = config.MAILSERVERPORT,
                                     context = ssl.create_default_context())
             smtp.login(config.MAILUSER, config.MAILPASS)
         else:
@@ -27,15 +27,15 @@ def send(tos, ccs, subject, text):
         return
     msg = MIMEText(text)
     msg['Subject'] = subject
-    msg['From'] = config.SENDER
+    msg['From'] = config.FROM
+    msg['Sender'] = config.SENDER
     msg['Date'] = formatdate(localtime = True)
     try:
         if (all([email_regex(r) for r in tos + ccs])):
             msg['To'] = ",".join(tos)
             msg['CC'] = ",".join(ccs)
             msg['BCC'] = ",".join(config.ADMINS)
-            smtp.sendmail(config.SENDER, tos + config.ADMINS + ccs,
-                          msg.as_string())
+            smtp.sendmail(config.SENDER, tos + config.ADMINS + ccs, msg.as_string())
         else:
             msg['To'] = ",".join(config.ADMINS)
             print("Addresses don't fit regex: " + str(tos) + str(ccs))
