@@ -1,0 +1,259 @@
+{% extends "base.tpl" %}
+{% set ROOT_PATH = 'https://www.isa-afp.org/' %}
+
+{% block title %}
+Current submissions
+{% endblock %}
+
+{% block headline %}
+Current Submissions
+{% endblock %}
+
+{% block content %}
+<div style="text-align: left">
+<table class="styled-table">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Title</th>
+      <th>Added to the AFP?</th>
+    </tr>
+  </thead>
+      {% for e in entries %}
+        {% if e.check_mail() %}
+          <tr>
+            <td>{{e.metadata.entries[0]['date']}}</td>
+          <td><a href="index?build={{e.name}}">{{e.metadata.entries[0]['title']}}</a></td>
+            <td>
+            <input type="radio" id="radio_submitted_{{e.name}}" name="radio_{{e.name}}"
+               onclick="
+                window.location.href =
+               'index?build={{ e.name }}&action=check_afp&status=SUBMITTED'"
+               {% if e.check_afp().name == "SUBMITTED" %} checked {% endif %}>
+            <label for="radio_submitted_{{e.name}}">Submitted</label>
+            <input type="radio" id="radio_processing_{{e.name}}" name="radio_{{e.name}}"
+               onclick="
+                window.location.href =
+               'index?build={{ e.name }}&action=check_afp&status=PROCESSING'"
+               {% if e.check_afp().name == "PROCESSING" %} checked {% endif %}>
+            <label for="radio_processing_{{e.name}}">In Processing</label>
+
+            <input type="radio" id="radio_added_{{e.name}}" name="radio_{{e.name}}"
+               onclick="
+                window.location.href =
+               'index?build={{ e.name }}&action=check_afp&status=ADDED'"
+               {% if e.check_afp().name == "ADDED" %} checked {% endif %}>
+            <label for="radio_added_{{e.name}}">Added to AFP</label>
+
+            <input type="radio" id="radio_rejected_{{e.name}}" name="radio_{{e.name}}"
+               onclick="
+                window.location.href =
+               'index?build={{ e.name }}&action=check_afp&status=REJECTED'"
+               {% if e.check_afp().name == "REJECTED" %} checked {% endif %}>
+            <label for="radio_rejected_{{e.name}}">Rejected</label>
+          </td>
+          </tr>
+          {% endif %}
+      {% endfor %}
+</table>
+</div>
+{#
+<table width="80%" class="entries">
+  <tbody>
+    <tr><td>
+      <h2 style="display: inline">Metadata</h2>
+      <p style="display: inline">
+        <a href="{{entry.link("metadata")}}">(INI format)</a>
+      </p>
+      <p style="display: inline">
+        <a href="{{entry.link("tar")}}">(archive file)</a>
+      </p>
+      <p style="display: inline">
+        <a href="{{entry.link("checks")}}">(warnings)</a>
+      </p>
+      {% if result == Result.SUCCESS %}
+      <p style="display: inline">
+        <a href="{{config.BROWSER_INFO_WWW + "/" +  entry.name}}">(browser_info)</a>
+      </p>
+      {% endif %}
+      {% for e in entries %}
+      <p>
+        <strong>Full name:</strong> {{e['title']}}<br>
+        <strong>Short name:</strong> {{e['shortname']}}<br>
+        <strong>Authors:</strong> {{e['author']}}<br>
+        <strong>License:</strong> {{e['license']}}<br>
+        <strong>Topics:</strong> {{e['topic']}}<br>
+        <strong>Abstract:</strong><br>
+        <span style="white-space: pre-wrap">{{e['abstract']}}</span>
+      </p>
+      {% endfor %}
+      <p><strong>Contact: </strong> {{ contact }} <br>
+        {% if comment: %}
+        <p>
+        <strong>Message for the editors:</strong><br>
+        <span style="white-space: pre-wrap">{{comment}}</span>
+        </p>
+        {% endif %}
+      <h2>Building status:</h2>
+      <p><em>
+      {% if result == Result.NOT_FINISHED and not entry.check_kill(): %}
+        Your AFP submission is being built.
+      {% elif result != Result.SUCCESS and entry.check_kill(): %}
+        The process building your AFP submission was stopped.
+      {% elif result == Result.SUCCESS and entry.check_mail(): %}
+        The AFP editors have been notified of your submission.
+      {% elif result == Result.SUCCESS and not entry.check_mail(): %}
+        Isabelle successfully built your AFP submission.
+      {% endif %}
+      </p></em>
+
+      <table id="buttons_table">
+      <tr>
+      {% if result == Result.NOT_FINISHED and not entry.check_kill(): %}
+      <td>
+      <button class="log_button" disabled>Resubmit</button>
+      </td>
+      <td class="button_text">
+      (You can only resubmit if the job running your current submission is stopped.)
+      </td>
+      {% else: %}
+      <td>
+      <form action="index" method="post">
+      {% for e in entries %}
+        <input type="hidden" value="{{loop.index0}}" name="numtable">
+        <input type="hidden" value="{{e['title']}}" name="title_{{loop.index0}}">
+        <input type="hidden" value="{{e['shortname']}}" name="shortname_{{loop.index0}}">
+        <input type="hidden" value="{{e['author']}}" name="author_{{loop.index0}}">
+        <input type="hidden" value="{{e['license']}}" name="license_{{loop.index0}}">
+        <input type="hidden" value="{{e['topic']}}" name="topic_{{loop.index0}}">
+        <input type="hidden" value="{{e['abstract']}}" name="abstract_{{loop.index0}}">
+      {% endfor %}
+      <input type="hidden" value="{{ contact }}" name="contact">
+      <input type="hidden" value="{{ comment }}" name="comment">
+      <input class="log_button" type="submit" value="Resubmit"><br>
+      </form>
+      </td>
+      <td class="button_text">
+      (The metadata of your entry is reused. You can change parts of the
+       metadata and/or upload a new archive file if necessary.)
+      </td>
+      {% endif %}
+      </tr>
+      <tr>
+      {% if result == Result.NOT_FINISHED and not entry.check_kill(): %}
+      <td>
+      <form action="index" method="get">
+        <input type="hidden" name="build" value="{{entry.name}}">
+        <input type="hidden" name="action" value="kill">
+        <input type="submit" class="log_button" value="Stop build of submission"><br>
+      </form>
+      <td class="button_text">
+      (Stop the process building your submission. After stopping you can change
+      the metadata and/or archive file by resubmitting.)
+      </td>
+      {% else: %}
+      <td>
+        <button class="log_button" disabled>Stop build of submission</button><br>
+      </td>
+      <td class="button_text">
+      </td>
+      {% endif %}
+      </tr>
+      </tr>
+      {% if result == Result.SUCCESS and not entry.check_mail(): %}
+      <td>
+      <form action="index" method="get">
+        <input type="hidden" name="build" value="{{entry.name}}">
+        <input type="hidden" name="action" value="mail">
+        <input type="submit" class="log_button" value="Send submission to AFP editors"><br>
+      </form>
+      </td>
+      <td class="button_text">
+      (Notify the AFP editors of your submission.)
+      </td>
+      {% else: %}
+      <td>
+        <button class="log_button" disabled>Send submission to AFP editors</button>
+      </td>
+      <td class="button_text">
+      {% if not entry.check_mail(): %}
+      (You can notify the AFP editors, if the building of your submission
+      is successful.)
+      {% endif %}
+      </td>
+      {% endif %}
+      </tr>
+      </table>
+      <h3>Isabelle log</h3>
+        <div id="log" style="margin-top: 1em;">
+          <pre id="preLog" style="white-space: pre-wrap">
+      {% if isalog: %}
+{{isalog}}
+      {% endif %}
+      {% if result == Result.NOT_FINISHED: %}
+<img style="vertical-align:middle" src="img/loader.gif">
+      {% endif %}
+     
+          </pre>
+        </div>
+    {% if result == Result.NOT_FINISHED: %}
+      <p style="font-size: small;">
+        Log updates continuously using JavaScript. If you have JavaScript disabled,
+        please refresh the page to update the log.
+      </p>
+     {% endif %}
+    </div>
+    </div>
+    {% if result == Result.NOT_FINISHED: %}
+    <script>
+    var varInterval = setInterval(updateLog, 3000);
+    function updateLog(state) {
+      $.get('{{entry.link("isabelle_log")}}', function(data) {
+          $("#preLog").html(data + '\n<img style="vertical-align:middle" src="img/loader.gif">');
+        }, 'text');
+      // Check state and don't update log anymore if finished
+      $.get('{{entry.link("state")}}', function(state) {
+          if ($.trim(state) != "NOT_FINISHED") {
+            clearInterval(varInterval);
+            location.reload()
+          }
+        }, 'text');
+    }
+    </script>
+    {% endif %}
+    </td></tr>
+  </tbody>
+</table>
+#}
+{% endblock %}
+
+{% block footer %}
+<style type="text/css">
+.styled-table {
+    border-collapse: collapse;
+    margin: 25px 0;
+    font-size: 0.9em;
+    font-family: sans-serif;
+    min-width: 400px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+} 
+.styled-table thead tr {
+    background-color: #2E2D4E;
+    color: #ffffff;
+    text-align: left;
+}
+.styled-table th,
+.styled-table td {
+    padding: 12px 15px;
+}
+.styled-table tbody tr {
+    border-bottom: 1px solid #dddddd;
+}
+.styled-table tbody tr:nth-of-type(even) {
+    background-color: #f3f3f3;
+}
+.styled-table tbody tr:last-of-type {
+    border-bottom: 2px solid #009879;
+}
+</style>
+{% endblock %}

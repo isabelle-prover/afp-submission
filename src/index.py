@@ -12,6 +12,7 @@ locale.setlocale(locale.LC_ALL, 'C.UTF-8')
 
 import config
 import cgi
+import functools
 
 if config.DEBUG:
     import cgitb
@@ -93,8 +94,11 @@ def save_file(metadata, form_file):
         form_file.filename,
         form_file.file
     )
-    print("Status: 302 New AFP Submission created")
-    print("Location: " + e.link())
+    redirect("302 New AFP Submission created", e.link())
+
+def redirect(status, location):
+    print("Status: " + status)
+    print("Location: " + location)
     print()
 
 def mail_to_editors(e):
@@ -208,12 +212,26 @@ def return_404(name = None):
     else:
         print("Not Found")
 
+def print_list_of_submissions():
+    print("Content-Type: text/html")
+    print()
+    tp_vals = dict()
+    # TODO: rewrite in more pythonic way
+    # find all submitted entries and remove duplicates
+    tp_vals['entries'] = functools.reduce(lambda xs,y: xs+[y] if not
+            y.metadata.entries[0]['shortname'] in map(lambda e:
+                e.metadata.entries[0]['shortname'], xs) else xs, [Entry.find(e)
+                    for e in sorted(Entry.listall(), reverse=True) if
+                    Entry.find(e).check_mail()],[]) 
+    print(fill_template(tp_vals, "submissions.html.tp"))
+
 def main():
     form = cgi.FieldStorage()
     name = form.getfirst('build')
     action = form.getfirst('action')
     if name:
         e = Entry.find(name)
+        # TODO: show error message on nonsensical action
         if e is None:
             return_404(name)
         elif action is None:
@@ -234,6 +252,12 @@ def main():
             print_state(e)
         elif action == "checks":
             print_checks(e)
+        elif action == "check_afp":
+            s = form.getfirst('status')
+            e.signal_afp(s)
+            redirect("303 Back to submission list", "index?action=submissions")
+    elif action == "submissions":
+        print_list_of_submissions()
     else:
         form_data_super = collect_form_data(form)
         metadata = Metadata(collect_form_per_entry(form),

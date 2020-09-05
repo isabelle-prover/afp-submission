@@ -19,6 +19,15 @@ class Result(enum.Enum):
     SUCCESS = 1
     FAILED = 2
 
+    def __str__(self):
+        if self == Result.NOT_FINISHED:
+            return "RUNNING"
+        elif self == Result.SUCCESS:
+            return "SUCCESSFUL BUILD"
+        else:
+            return "FAILED"
+
+# TODO is this class still used?
 class ResultWriter():
     def __init__(self, f):
         self.result_file = f
@@ -27,6 +36,12 @@ class ResultWriter():
         print(res.name, file=self.result_file)
         self.result_file.close()
         self.result_file = None
+
+class AFPStatus(enum.Enum):
+    SUBMITTED = 0
+    PROCESSING = 1
+    REJECTED = 2
+    ADDED = 3
 
 class Metadata():
     def __init__(self, entries, contact, comment):
@@ -42,7 +57,7 @@ class Metadata():
                 if not value:
                     return False
         return True
-    
+
     def to_ini(self, entry_name):
         ini = configparser.SafeConfigParser()
         ini.add_section(entry_name)
@@ -166,6 +181,8 @@ class Entry:
 
     ## UP part: written by the webserver
 
+    # TODO: rewrite function to two functions, one returing file path
+    # one returing file pointer
     def up(self, *names, mode = None):
         name = os.path.join(config.UPLOAD_DIR, self.name, *names)
         if mode:
@@ -178,6 +195,10 @@ class Entry:
             content = name.upper()
         with self.up(name, mode='w') as f:
             print(content, file=f, flush=True)
+
+    def del_signal(self, name):
+        if os.path.exists(self.up(name)):
+            os.remove(self.up(name))
 
     def up_check(self, name):
         return os.path.exists(self.up(name))
@@ -196,6 +217,21 @@ class Entry:
 
     def signal_mail(self):
         self.signal("mail")
+
+    def signal_afp(self, sub_status):
+        try:
+            s = AFPStatus[sub_status]
+            with self.up(config.AFP_STATUS_FILENAME, mode='w') as f:
+                print(s.name, file=f, flush=True)
+        except KeyError:
+            pass
+
+    def check_afp(self):
+        try:
+            with self.up(config.AFP_STATUS_FILENAME, mode='r') as f:
+                return AFPStatus[f.read().strip()]
+        except:
+            return AFPStatus.SUBMITTED
 
     def check_mail(self):
         return self.up_check("mail")
