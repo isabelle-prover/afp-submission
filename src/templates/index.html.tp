@@ -107,8 +107,8 @@ AFP Submission
             {% endif %}
             <br>
             <span class="example">
-            Example: <em>Computer Science/Security, 
-            Computer Science/Programming Languages/Type Systems</em><br>
+            Example: <em>Computer science/Security,
+            Computer science/Programming languages/Type systems</em><br>
             (<a href={{config.AFPLINKBASE}}topics.shtml>Index of topics</a>)
             </span>
           </td>
@@ -276,8 +276,8 @@ AFP Submission
   + 'value="">'
   + '<br>'
   + '<span class="example">'
-  + 'Example: <em>Computer Science/Security, '
-  + 'Computer Science/Programming, Languages/Type Systems</em><br>'
+  + 'Example: <em>Computer science/Security, '
+  + 'Computer science/Programming, languages/Type systems</em><br>'
   + '(<a href=http://www.isa-afp.org/topics.shtml>Index of topics</a>)'
   + '</span>'
   + '</td>'
