@@ -63,7 +63,10 @@ Current Submissions
     <tr><td>
       <h2 style="display: inline">Metadata</h2>
       <p style="display: inline">
-        <a href="{{entry.link("metadata")}}">(INI format)</a>
+        <a href="{{entry.link("metadatav2")}}">(TOML format)</a>
+      </p>
+      <p style="display: inline">
+        <a href="{{entry.link("metadata")}}">(old INI format)</a>
       </p>
       <p style="display: inline">
         <a href="{{entry.link("tar")}}">(archive file)</a>
