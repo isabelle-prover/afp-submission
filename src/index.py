@@ -158,9 +158,16 @@ def show_meta_v2(entry):
         name_short = name_enc.decode('utf-8').lower()
         name = html.escape(name)
 
-        if affil.startswith('mailto:'):
+        def is_email(s):
+            if s.startswith('mailto:'):
+                return True
+            if s.startswith('http://') or s.startswith('https://'):
+                return False
+            return '@' in s
+
+        if is_email(affil):
             affil_id = 'email = "' + name_short + '_email"'
-            email = html.escape(affil.lstrip('mailto:'))
+            email = html.escape(affil[-len('mailto:')] if affil.startswith('mailto:') else affil)
             homepage = ''
         else:
             affil_id = 'homepage = "' + name_short + '_homepage"'
