@@ -135,7 +135,7 @@ AFP Submission
           {% endif %}
             <br>
             <span class="example">
-            Note: You can use HTML to format your abstract.
+            Note: You can use HTML (<strong>not LaTeX!</strong>) to format your abstract.
             </span>
           </td>
         </tr>
@@ -299,7 +299,7 @@ AFP Submission
   + '<td><textarea name="abstract_{0}"></textarea>'
   + '<br>'
   + '<span class="example">'
-  + 'Note: You can use HTML to format your abstract.'
+  + 'Note: You can use HTML (<strong>not LaTeX!</strong>) to format your abstract.'
   + '</span>'
   + '</td>'
   + '</tr>'

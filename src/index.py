@@ -192,7 +192,7 @@ def show_meta_v2(entry):
         print('title = "' + sub_entry['title'] + '"')
         print('date = ' + sub_entry['date'])
         print('topics = [\n' + ''.join(topics) + ']')
-        print('abstract = """\n' + abstract + '\n"""')
+        print('abstract = """\n' + abstract + '"""')
         print('license = "' + sub_entry['license'].lower() + '"')
         print('note = ""')
         print('\n[authors]')
