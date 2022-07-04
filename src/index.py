@@ -153,7 +153,9 @@ def show_meta(entry):
 
 def show_meta_v2(entry):
     def split_author(author_str):
-        m, name, affil = re.match(r"(and )?([^<]+) <([^>]+)>", html.unescape(author_str)).groups()
+        m, name, affil = re.match(r"(and )?([^<]+)\S?<?([^>]*)>?", html.unescape(author_str)).groups()
+        name = name.strip()
+
         name_enc = unicodedata.normalize('NFKD', name.split(' ')[-1]).encode('ASCII', 'ignore')
         name_short = name_enc.decode('utf-8').lower()
         name = html.escape(name)
@@ -173,7 +175,11 @@ def show_meta_v2(entry):
             user, host = email.split('@')
             return 'user = ' + part_s(user.split('.')) + "\nhost = " + part_s(host.split('.'))
 
-        if is_email(affil):
+        if not affil:
+            affil_id = ''
+            email = ''
+            homepage = ''
+        elif is_email(affil):
             affil_id = 'email = "' + name_short + '_email"'
             email = get_email(affil)
             homepage = ''
