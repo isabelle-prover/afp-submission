@@ -165,9 +165,17 @@ def show_meta_v2(entry):
                 return False
             return '@' in s
 
+        def get_email(affil):
+            def part_s(arr):
+                return '[\n' + ''.join(['  "' + part + '",\n' for part in arr]) + ']'
+
+            email = affil[len('mailto:'):] if affil.startswith('mailto:') else affil
+            user, host = email.split('@')
+            return 'user = ' + part_s(user.split('.')) + "\nhost = " + part_s(host.split('.'))
+
         if is_email(affil):
             affil_id = 'email = "' + name_short + '_email"'
-            email = html.escape(affil[len('mailto:'):] if affil.startswith('mailto:') else affil)
+            email = get_email(affil)
             homepage = ''
         else:
             affil_id = 'homepage = "' + name_short + '_homepage"'
@@ -216,7 +224,8 @@ def show_meta_v2(entry):
             print('name = "' + vals['name'] + '"')
             print('\n[' + short_name + '.emails]')
             if vals['email']:
-                print(short_name + '_email = "' + vals['email'] + '"')
+                print('\n[' + short_name + '_email]')
+                print(vals['email'])
             print('\n[' + short_name + '.homepages]')
             if vals['homepage']:
                 print(short_name + '_homepage = "' + vals['homepage'] + '"')
