@@ -15,11 +15,8 @@ AFP Submission: {{entries[0]['title']}}
     <tr><td>
       <h2 style="display: inline">Metadata</h2>
       <p style="display: inline">
-        (
-        <a href="{{entry.link("metadatav2")}}">TOML format</a>
-        ,
-        <a href="{{entry.link("metadatav2_download")}}">download entry</a>
-        )
+        (<a href="{{entry.link("metadatav2")}}">TOML format</a>,
+        <a href="{{entry.link("metadatav2_download")}}">download entry</a>)
       </p>
       <p style="display: inline">
         <a href="{{entry.link("metadata")}}">(old INI format)</a>
