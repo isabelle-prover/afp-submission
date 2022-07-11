@@ -151,44 +151,84 @@ def show_meta(entry):
         sys.stdout.write(out_str)
 
 
-def show_meta_v2(entry):
-    def split_author(author_str):
-        m, name, affil = re.match(r"(and )?([^<]+)\S?<?([^>]*)>?", html.unescape(author_str)).groups()
-        name = name.strip()
+# metadata v2
+def split_author(author_str):
+    m, name, affil = re.match(r"(and )?([^<]+)\S?<?([^>]*)>?", html.unescape(author_str)).groups()
+    name = name.strip()
 
-        name_enc = unicodedata.normalize('NFKD', name.split(' ')[-1]).encode('ASCII', 'ignore')
-        name_short = name_enc.decode('utf-8').lower()
-        name = html.escape(name)
+    name_enc = unicodedata.normalize('NFKD', name.split(' ')[-1]).encode('ASCII', 'ignore')
+    name_short = name_enc.decode('utf-8').lower()
+    name = html.escape(name)
 
-        def is_email(s):
-            if s.startswith('mailto:'):
-                return True
-            if s.startswith('http://') or s.startswith('https://'):
-                return False
-            return '@' in s
+    def is_email(s):
+        if s.startswith('mailto:'):
+            return True
+        if s.startswith('http://') or s.startswith('https://'):
+            return False
+        return '@' in s
 
-        def get_email(affil):
-            def part_s(arr):
-                return '[\n' + ''.join(['  "' + part + '",\n' for part in arr]) + ']'
+    def get_email(affil):
+        def part_s(arr):
+            return '[\n' + ''.join(['  "' + part + '",\n' for part in arr]) + ']'
 
-            email = affil[len('mailto:'):] if affil.startswith('mailto:') else affil
-            user, host = email.split('@')
-            return 'user = ' + part_s(user.split('.')) + "\nhost = " + part_s(host.split('.'))
+        email = affil[len('mailto:'):] if affil.startswith('mailto:') else affil
+        user, host = email.split('@')
+        return 'user = ' + part_s(user.split('.')) + "\nhost = " + part_s(host.split('.'))
 
-        if not affil:
-            affil_id = ''
-            email = ''
-            homepage = ''
-        elif is_email(affil):
-            affil_id = 'email = "' + name_short + '_email"'
-            email = get_email(affil)
-            homepage = ''
+    if not affil:
+        affil_id = ''
+        email = ''
+        homepage = ''
+    elif is_email(affil):
+        affil_id = 'email = "' + name_short + '_email"'
+        email = get_email(affil)
+        homepage = ''
+    else:
+        affil_id = 'homepage = "' + name_short + '_homepage"'
+        email = ''
+        homepage = html.escape(affil)
+    return name_short, {'affil': affil_id, 'name': name, 'email': email, 'homepage': homepage}
+
+
+def print_entry_v2(sub_entry, authors, contact):
+    topics = ['  "' + topic.strip() + '",\n' for topic in sub_entry['topic'].split(',')]
+    abstract = '\n'.join(
+        textwrap.wrap(sub_entry['abstract'], break_on_hyphens=False, break_long_words=False))
+    print('title = "' + sub_entry['title'] + '"')
+    print('date = ' + sub_entry['date'])
+    print('topics = [\n' + ''.join(topics) + ']')
+    print('abstract = """\n' + abstract + '"""')
+    print('license = "' + sub_entry['license'].lower() + '"')
+    print('note = ""')
+    print('\n[authors]')
+    for short_name, vals in authors:
+        print('\n[authors.' + short_name + ']')
+        print(vals['affil'])
+    print('\n[contributors]')
+    print('\n[notify]')
+    for mail in [email.strip() for email in contact.split(',')]:
+        res = [short_name for short_name, vals in authors if mail == vals['email']]
+        if len(res) == 1:
+            print(res[0] + ' = "' + res[0] + '_email"')
         else:
-            affil_id = 'homepage = "' + name_short + '_homepage"'
-            email = ''
-            homepage = html.escape(affil)
-        return name_short, {'affil': affil_id, 'name': name, 'email': email, 'homepage': homepage}
+            print('??? = ???_email # ' + mail)
+    print('\n[history]')
+    print('\n[extra]')
 
+
+def download_meta_v2(entry):
+    sub_entry = entry.metadata.entries[0]
+    filename = sub_entry['shortname'] + '.toml'
+    authors = [split_author(author_str) for author_str in sub_entry['author'].split(', ')]
+    print("Content-Type: application/octet-stream")
+    print("Content-Disposition: attachment; filename=" + filename)
+    print()
+    #Flush so headers are before file
+    sys.stdout.flush()
+    print_entry_v2(sub_entry, authors, entry.metadata.contact)
+
+
+def show_meta_v2(entry):
     print("Content-type: text/html")
     print()
     print('<html><head><meta charset="utf-8"/>')
@@ -197,32 +237,9 @@ def show_meta_v2(entry):
     for sub_entry in entry.metadata.entries:
         print('<h1>' + sub_entry['shortname'] + '</h1>')
         authors = [split_author(author_str) for author_str in sub_entry['author'].split(', ')]
-        topics = ['  "' + topic.strip() + '",\n' for topic in sub_entry['topic'].split(',')]
-        abstract = '\n'.join(
-            textwrap.wrap(sub_entry['abstract'], break_on_hyphens=False, break_long_words=False))
-
         print('<h2>metadata/entries/' + sub_entry['shortname'] + '.toml</h2>')
         print('<pre>')
-        print('title = "' + sub_entry['title'] + '"')
-        print('date = ' + sub_entry['date'])
-        print('topics = [\n' + ''.join(topics) + ']')
-        print('abstract = """\n' + abstract + '"""')
-        print('license = "' + sub_entry['license'].lower() + '"')
-        print('note = ""')
-        print('\n[authors]')
-        for short_name, vals in authors:
-            print('\n[authors.' + short_name + ']')
-            print(vals['affil'])
-        print('\n[contributors]')
-        print('\n[notify]')
-        for mail in [email.strip() for email in entry.metadata.contact.split(',')]:
-            res = [short_name for short_name, vals in authors if mail == vals['email']]
-            if len(res) == 1:
-                print(res[0] + ' = "' + res[0] + '_email"')
-            else:
-                print('??? = ???_email # ' + mail)
-        print('\n[history]')
-        print('\n[extra]')
+        print_entry_v2(sub_entry, authors, entry.metadata.contact)
         print('</pre>')
         print('<h2>metadata/authors.toml (merge)</h2><pre>')
         for short_name, vals in authors:
@@ -331,6 +348,8 @@ def main():
             show_meta(e)
         elif action == 'metadatav2':
             show_meta_v2(e)
+        elif action == 'metadatav2_download':
+            download_meta_v2(e)
         elif action == "mail":
             mail_to_editors(e)
             show_log(e)
