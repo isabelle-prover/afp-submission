@@ -214,6 +214,7 @@ def print_entry_v2(sub_entry, authors, contact):
             print('??? = ???_email # ' + mail)
     print('\n[history]')
     print('\n[extra]')
+    print('\n[related]')
 
 
 def download_meta_v2(entry):
