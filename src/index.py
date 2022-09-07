@@ -152,42 +152,46 @@ def show_meta(entry):
 
 
 # metadata v2
-def split_author(author_str):
-    m, name, affil = re.match(r"(and )?([^<]+)\S?<?([^>]*)>?", html.unescape(author_str)).groups()
-    name = name.strip()
+def split_authors(authors_str):
+    def parse_author(author_str):
+        name, affil = re.match(r"([^<]+)\S?<?([^>]*)>?", html.unescape(author_str)).groups()
+        name = name.strip()
 
-    name_enc = unicodedata.normalize('NFKD', name.split(' ')[-1]).encode('ASCII', 'ignore')
-    name_short = name_enc.decode('utf-8').lower()
-    name = html.escape(name)
+        name_enc = unicodedata.normalize('NFKD', name.split(' ')[-1]).encode('ASCII', 'ignore')
+        name_short = name_enc.decode('utf-8').lower()
+        name = html.escape(name)
 
-    def is_email(s):
-        if s.startswith('mailto:'):
-            return True
-        if s.startswith('http://') or s.startswith('https://'):
-            return False
-        return '@' in s
+        def is_email(s):
+            if s.startswith('mailto:'):
+                return True
+            if s.startswith('http://') or s.startswith('https://'):
+                return False
+            return '@' in s
 
-    def get_email(affil):
-        def part_s(arr):
-            return '[\n' + ''.join(['  "' + part + '",\n' for part in arr]) + ']'
+        def get_email(affil):
+            def part_s(arr):
+                return '[\n' + ''.join(['  "' + part + '",\n' for part in arr]) + ']'
 
-        email = affil[len('mailto:'):] if affil.startswith('mailto:') else affil
-        user, host = email.split('@')
-        return 'user = ' + part_s(user.split('.')) + "\nhost = " + part_s(host.split('.'))
+            email = affil[len('mailto:'):] if affil.startswith('mailto:') else affil
+            user, host = email.split('@')
+            return 'user = ' + part_s(user.split('.')) + "\nhost = " + part_s(host.split('.'))
 
-    if not affil:
-        affil_id = ''
-        email = ''
-        homepage = ''
-    elif is_email(affil):
-        affil_id = 'email = "' + name_short + '_email"'
-        email = get_email(affil)
-        homepage = ''
-    else:
-        affil_id = 'homepage = "' + name_short + '_homepage"'
-        email = ''
-        homepage = html.escape(affil)
-    return name_short, {'affil': affil_id, 'name': name, 'email': email, 'homepage': homepage}
+        if not affil:
+            affil_id = ''
+            email = ''
+            homepage = ''
+        elif is_email(affil):
+            affil_id = 'email = "' + name_short + '_email"'
+            email = get_email(affil)
+            homepage = ''
+        else:
+            affil_id = 'homepage = "' + name_short + '_homepage"'
+            email = ''
+            homepage = html.escape(affil)
+        return name_short, {'affil': affil_id, 'name': name, 'email': email, 'homepage': homepage}
+
+    author_parts = authors_str.replace(' and ', ', ').split(', ')
+    return [parse_author(author_str) for author_str in author_parts]
 
 
 def print_entry_v2(sub_entry, authors, contact, htmlescape):
@@ -223,13 +227,12 @@ def print_entry_v2(sub_entry, authors, contact, htmlescape):
 def download_meta_v2(entry):
     sub_entry = entry.metadata.entries[0]
     filename = sub_entry['shortname'] + '.toml'
-    authors = [split_author(author_str) for author_str in sub_entry['author'].split(', ')]
     print("Content-Type: application/octet-stream")
     print("Content-Disposition: attachment; filename=" + filename)
     print()
     #Flush so headers are before file
     sys.stdout.flush()
-    print_entry_v2(sub_entry, authors, entry.metadata.contact, False)
+    print_entry_v2(sub_entry, split_authors(sub_entry['author']), entry.metadata.contact, False)
 
 
 def show_meta_v2(entry):
@@ -240,7 +243,7 @@ def show_meta_v2(entry):
     print("</head><body>")
     for sub_entry in entry.metadata.entries:
         print('<h1>' + sub_entry['shortname'] + '</h1>')
-        authors = [split_author(author_str) for author_str in sub_entry['author'].split(', ')]
+        authors = split_authors(sub_entry['author'])
         print('<h2>metadata/entries/' + sub_entry['shortname'] + '.toml</h2>')
         print('<pre>')
         print_entry_v2(sub_entry, authors, entry.metadata.contact, True)
