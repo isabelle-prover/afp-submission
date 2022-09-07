@@ -190,15 +190,17 @@ def split_author(author_str):
     return name_short, {'affil': affil_id, 'name': name, 'email': email, 'homepage': homepage}
 
 
-def print_entry_v2(sub_entry, authors, contact):
-    topic_string = html.unescape(sub_entry['topic'])
+def print_entry_v2(sub_entry, authors, contact, htmlescape):
+    topic_string = sub_entry['topic'] if htmlescape else html.unescape(sub_entry['topic'])
     topics = ['  "' + topic.strip() + '",\n' for topic in topic_string.split(',')]
     abstract = '\n'.join(
         textwrap.wrap(sub_entry['abstract'], break_on_hyphens=False, break_long_words=False))
-    print('title = "' + html.unescape(sub_entry['title']) + '"')
+    title_string = sub_entry['title'] if htmlescape else html.unescape(sub_entry['title'])
+    print('title = "' + title_string + '"')
     print('date = ' + sub_entry['date'])
     print('topics = [\n' + ''.join(topics) + ']')
-    print('abstract = """\n' + html.unescape(abstract).replace('\\', '\\\\') + '"""')
+    abstract_string = abstract if htmlescape else html.unescape(abstract)
+    print('abstract = """\n' + abstract_string.replace('\\', '\\\\') + '"""')
     print('license = "' + sub_entry['license'].lower() + '"')
     print('note = ""')
     print('\n[authors]')
@@ -227,7 +229,7 @@ def download_meta_v2(entry):
     print()
     #Flush so headers are before file
     sys.stdout.flush()
-    print_entry_v2(sub_entry, authors, entry.metadata.contact)
+    print_entry_v2(sub_entry, authors, entry.metadata.contact, False)
 
 
 def show_meta_v2(entry):
@@ -241,7 +243,7 @@ def show_meta_v2(entry):
         authors = [split_author(author_str) for author_str in sub_entry['author'].split(', ')]
         print('<h2>metadata/entries/' + sub_entry['shortname'] + '.toml</h2>')
         print('<pre>')
-        print_entry_v2(sub_entry, authors, entry.metadata.contact)
+        print_entry_v2(sub_entry, authors, entry.metadata.contact, True)
         print('</pre>')
         print('<h2>metadata/authors.toml (merge)</h2><pre>')
         for short_name, vals in authors:
