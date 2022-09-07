@@ -197,7 +197,7 @@ def print_entry_v2(sub_entry, authors, contact):
     print('title = "' + sub_entry['title'] + '"')
     print('date = ' + sub_entry['date'])
     print('topics = [\n' + ''.join(topics) + ']')
-    print('abstract = """\n' + abstract + '"""')
+    print('abstract = """\n' + abstract.replace('\\', '\\\\') + '"""')
     print('license = "' + sub_entry['license'].lower() + '"')
     print('note = ""')
     print('\n[authors]')
