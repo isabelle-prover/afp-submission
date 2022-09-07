@@ -191,13 +191,14 @@ def split_author(author_str):
 
 
 def print_entry_v2(sub_entry, authors, contact):
-    topics = ['  "' + topic.strip() + '",\n' for topic in sub_entry['topic'].split(',')]
+    topic_string = html.unescape(sub_entry['topic'])
+    topics = ['  "' + topic.strip() + '",\n' for topic in topic_string.split(',')]
     abstract = '\n'.join(
         textwrap.wrap(sub_entry['abstract'], break_on_hyphens=False, break_long_words=False))
-    print('title = "' + sub_entry['title'] + '"')
+    print('title = "' + html.unescape(sub_entry['title']) + '"')
     print('date = ' + sub_entry['date'])
     print('topics = [\n' + ''.join(topics) + ']')
-    print('abstract = """\n' + abstract.replace('\\', '\\\\') + '"""')
+    print('abstract = """\n' + html.unescape(abstract).replace('\\', '\\\\') + '"""')
     print('license = "' + sub_entry['license'].lower() + '"')
     print('note = ""')
     print('\n[authors]')
