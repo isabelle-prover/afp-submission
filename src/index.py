@@ -248,7 +248,7 @@ def show_meta_v2(entry):
             print('name = "' + vals['name'] + '"')
             print('\n[' + short_name + '.emails]')
             if vals['email']:
-                print('\n[' + short_name + '_email]')
+                print('\n[' + short_name + '.emails.' + short_name + '_email]')
                 print(vals['email'])
             print('\n[' + short_name + '.homepages]')
             if vals['homepage']:
