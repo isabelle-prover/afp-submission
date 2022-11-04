@@ -1,18 +1,16 @@
 #!/usr/bin/python3
 
-import configparser
-import os
-import random
 import enum
+import json
+import os
 import re
-from datetime import datetime
-import shutil
 import tarfile
 import zipfile
 
 import config
 
-FMT = re.compile("^[0-9]{8}-[0-9]{6}_[0-9]{4}$")
+FMT = re.compile("^[0-9]{2}-[0-9]{2}-[0-9]{4}_[0-9]{2}-[0-9]{2}-[0-9]{2}_[0-9]{3}$")
+
 
 class Result(enum.Enum):
     NOT_FINISHED = 0
@@ -27,8 +25,8 @@ class Result(enum.Enum):
         else:
             return "FAILED"
 
-# TODO is this class still used?
-class ResultWriter():
+
+class ResultWriter:
     def __init__(self, f):
         self.result_file = f
 
@@ -37,46 +35,26 @@ class ResultWriter():
         self.result_file.close()
         self.result_file = None
 
+
 class AFPStatus(enum.Enum):
     SUBMITTED = 0
     PROCESSING = 1
     REJECTED = 2
     ADDED = 3
 
-class Metadata():
+
+class Metadata:
     def __init__(self, entries, contact, comment):
         self.entries = entries
         self.contact = contact
         self.comment = comment
 
-    def validate(self):
-        if not self.entries or not self.contact:
-            return False
-        for entry in self.entries:
-            for _key, value in entry.items():
-                if not value:
-                    return False
-        return True
-
-    def to_ini(self, entry_name):
-        ini = configparser.SafeConfigParser()
-        ini.add_section(entry_name)
-        ini.set(entry_name, 'contact', self.contact)
-        ini.set(entry_name, 'comment', self.comment)
-        for entry in self.entries:
-            ini.add_section(entry['shortname'])
-            for key, value in entry.items():
-                ini.set(entry['shortname'], key, value)
-        return ini
-
     @staticmethod
-    def from_ini(ini, entry_name):
-        entries = [dict(ini[s]) for s in ini
-                                if s != "DEFAULT" and s != entry_name]
-        return Metadata(entries, ini[entry_name]['contact'],
-                        ini[entry_name]['comment'])
+    def from_json(info):
+        return Metadata(info["entries"], info["notify"], info["comment"])
 
-class ArchiveFile():
+
+class ArchiveFile:
     """ Simple class with file object and flag to show if tar or zip """
 
     mime_type = None
@@ -93,31 +71,32 @@ class ArchiveFile():
         self.fileobj.close()
 
     def extract(self, dir):
-        raise Unimplemented()
+        raise NotImplementedError()
+
 
 class TarArchiveFile(ArchiveFile):
-    mime_type = "application/x-tar"
-    archive_name = "theory.tar.gz"
+    archive_name = "archive.tar.gz"
 
     def extract(self, dir):
         try:
-            with tarfile.open(fileobj = self.fileobj) as t:
-                t.extractall(path = dir)
+            with tarfile.open(fileobj=self.fileobj) as t:
+                t.extractall(path=dir)
                 return True
         except tarfile.TarError:
             return False
 
+
 class ZipArchiveFile(ArchiveFile):
-    mime_type = "application/zip"
-    archive_name = "theory.zip"
+    archive_name = "archive.zip"
 
     def extract(self, dir):
         try:
             with zipfile.ZipFile(self.fileobj) as z:
-                z.extractall(path = dir)
+                z.extractall(path=dir)
                 return True
         except zipfile.BadZipFile:
             return False
+
 
 class Entry:
     """ Manage all state about a AFP submission entry.
@@ -127,32 +106,8 @@ class Entry:
     """
 
     @staticmethod
-    def new(metadata, filename_archive, archive_stream):
-        "Creates a new entry"
-        rand = random.SystemRandom()
-        nounce = rand.randint(0, 9999)
-        tm = datetime.now()
-        ## the following needs to match FMT
-        name = "{}_{:04d}".format(tm.strftime("%Y%m%d-%H%M%S"), nounce)
-
-        e = Entry(name, metadata)
-        os.mkdir(e.up())
-        e.write_ini()
-
-        if filename_archive.endswith(".zip"):
-            archive_name = "archive.zip"
-        else:
-            archive_name = "archive.tar.gz"
-
-        with open(e.up(archive_name), 'wb') as f:
-            shutil.copyfileobj(archive_stream, f)
-
-        e.signal_upload()
-        return e
-
-    @staticmethod
     def find(name):
-        "Checks if the directory is available"
+        """Checks if the directory is available"""
         if FMT.match(name) is None:
             return None
 
@@ -165,12 +120,12 @@ class Entry:
     def listall():
         return set(os.listdir(config.UPLOAD_DIR))
 
-    def __init__ (self, name, metadata = None):
+    def __init__(self, name, metadata=None):
         self.name = name
         if metadata:
             self.metadata = metadata
         else:
-            self.read_ini()
+            self.read_json()
 
     def link(self, action=None):
         l = config.LINKBASE + "index?build=" + self.name
@@ -178,15 +133,12 @@ class Entry:
             l = l + "&action=" + action
         return l
 
+    # UP part: written by the webserver ############################################################
 
-    ## UP part: written by the webserver
-
-    # TODO: rewrite function to two functions, one returing file path
-    # one returing file pointer
-    def up(self, *names, mode = None):
+    def up(self, *names, mode=None):
         name = os.path.join(config.UPLOAD_DIR, self.name, *names)
         if mode:
-            return open(name, mode, encoding = "utf8")
+            return open(name, mode, encoding="utf8")
         else:
             return name
 
@@ -196,42 +148,18 @@ class Entry:
         with self.up(name, mode='w') as f:
             print(content, file=f, flush=True)
 
-    def del_signal(self, name):
-        if os.path.exists(self.up(name)):
-            os.remove(self.up(name))
-
     def up_check(self, name):
         return os.path.exists(self.up(name))
-
-    def signal_kill(self):
-        self.signal("kill")
 
     def check_kill(self):
         return self.up_check("kill")
 
-    def signal_upload(self):
-        self.signal("done")
-
     def check_upload(self):
         return self.up_check("done")
 
-    def signal_mail(self):
-        self.signal("mail")
-
     def signal_afp(self, sub_status):
-        try:
-            s = AFPStatus[sub_status]
-            with self.up(config.AFP_STATUS_FILENAME, mode='w') as f:
-                print(s.name, file=f, flush=True)
-        except KeyError:
-            pass
-
-    def check_afp(self):
-        try:
-            with self.up(config.AFP_STATUS_FILENAME, mode='r') as f:
-                return AFPStatus[f.read().strip()]
-        except:
-            return AFPStatus.SUBMITTED
+        with self.up(config.AFP_STATUS_FILENAME, mode='w') as f:
+            print(sub_status.name, file=f, flush=True)
 
     def check_mail(self):
         return self.up_check("mail")
@@ -242,20 +170,11 @@ class Entry:
         except FileNotFoundError:
             return ZipArchiveFile(self.up("archive.zip"), 'rb')
 
-    def open_ini(self, mode = None):
-        return self.up("info.ini", mode=mode)
+    def read_json(self):
+        with self.up("info.json", mode='r') as info:
+            self.metadata = Metadata.from_json(json.load(info))
 
-    def write_ini(self):
-        ini = self.metadata.to_ini(self.name)
-        with self.open_ini('w') as f:
-            ini.write(f)
-
-    def read_ini(self):
-        ini = configparser.SafeConfigParser()
-        ini.read(self.open_ini())
-        self.metadata = Metadata.from_ini(ini, self.name)
-
-    ## DOWN part: written by the container manager
+    # DOWN part: written by the container manager ##################################################
 
     def down(self, *names, mode=None):
         name = os.path.join(config.DOWNLOAD_DIR, self.name, *names)
@@ -279,5 +198,4 @@ class Entry:
 
     def is_terminated(self):
         s = self.get_result()
-        return (s != Result.NOT_FINISHED)
-
+        return s != Result.NOT_FINISHED

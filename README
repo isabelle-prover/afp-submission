@@ -6,20 +6,16 @@ This is the automated AFP submission system.
 Architecture
 ------------
 
-The submission system is split into three parts:
-
- * the web interface (bin/log, bin/submission)
+The submission system is split into two parts:
 
  * the submission management (bin/server)
 
  * the execution environment for each single submission (LXC container)
 
-The files in /bin assume that the sources are stored in /opt/afpbuild.
-
-The web interface are two CGI scripts which puts the submitted AFP theory into
-/var/afpbuild/up. The submission management regularly scans this directory and
+The web interface is implemented in AFP/Scala and puts the submitted AFP theory into
+UPLOAD_DIR. The submission management regularly scans this directory and
 starts a new execution environment for each new submission. The results of this
-run are stored /var/afpbuild/down.
+run are stored in DOWNLOAD_DIR.
 
 Install
 -------
@@ -28,22 +24,12 @@ Install
 
  * src/config.py contains setup for paths, email adresses etc...
 
- * bin/log and bin/submission are CGI scripts for the website
-   (accessing /opt/afpbuild)
-
  * bin/server is the submission management
 
  * /var/afpbuild/up, /var/afpbuild/up is the submission database
 
 Development Environment
 -----------------------
-
-Running CGI scripts:
-  python3 -m http.server --cgi
-
-  Then open http://localhost:8000/cgi-bin/index.
-  Attention: status code 302 or 201 does not work. Obviously, cgi scripts need
-  to be in the cgi-bin directory.
 
 Running SMTP catcher:
   sudo python -m smtpd -n -c DebuggingServer localhost:25
@@ -60,16 +46,3 @@ Setup the LXC container:
   # ~/.config/lxc/default.conf
   lxc.id_map = u 0 10000001 10000
   lxc.id_map = g 0 10000001 10000
-
-
-TODO
-----
-
- - generate topic data from AFP automatically
-
- - merge afp submission page with our start page
-   mention description and example before each field.
-
- - allow update of metadata/theory file in the log view!!
-
- - support multiple submissions at once

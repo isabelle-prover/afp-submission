@@ -1,7 +1,10 @@
 #!/usr/bin/python3
 
 import sys
-sys.path.append("/opt/afpbuild/src")
+from os import path
+
+proj_dir = path.dirname(path.dirname(path.abspath(__file__)))
+sys.path.append(path.join(proj_dir, 'src'))
 
 import server
 server.main()
