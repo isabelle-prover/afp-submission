@@ -111,7 +111,7 @@ class Entry:
         if FMT.match(name) is None:
             return None
 
-        if os.path.isdir(os.path.join(config.UPLOAD_DIR, name)):
+        if os.path.isfile(os.path.join(config.UPLOAD_DIR, name, "done")):
             return Entry(name)
 
         return None
@@ -153,9 +153,6 @@ class Entry:
 
     def check_kill(self):
         return self.up_check("kill")
-
-    def check_upload(self):
-        return self.up_check("done")
 
     def signal_afp(self, sub_status):
         with self.up(config.AFP_STATUS_FILENAME, mode='w') as f:

@@ -28,7 +28,7 @@ def main():
             else:
                 # find all uploaded fresh submissions and start them
                 e = Entry.find(name)
-                if e and e.check_upload():
+                if e:
                     containers[name] = Container(e)
                     containers[name].run()
 
