@@ -127,11 +127,8 @@ class Entry:
         else:
             self.read_json()
 
-    def link(self, action=None):
-        l = config.LINKBASE + "index?build=" + self.name
-        if action:
-            l = l + "&action=" + action
-        return l
+    def link(self):
+        return config.LINKBASE + "submission?id=" + self.name
 
     # UP part: written by the webserver ############################################################
 

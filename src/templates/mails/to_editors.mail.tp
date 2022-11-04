@@ -4,7 +4,7 @@ the new AFP entry "{{ shortname }}" was submitted and successfully built
 on our server.
 
 All relevant information and files can be found here:
-<{{ submission_url }}?build={{ name }}>
+{link:s}
 
 Yours sincerely
 The AFP Submission Server

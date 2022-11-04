@@ -70,7 +70,7 @@ def fill_template(vals, template_file):
 def mail_to_editors(entry):
     tp_vals = dict()
     tp_vals["name"] = entry.name
-    tp_vals["submission_url"] = config.SUBMISSION_URL
+    tp_vals["link"] = entry.link()
     tp_vals["fullname"] = entry.metadata.entries[0]
     # set status to submitted (even if mail fails)
     entry.signal_afp(AFPStatus.SUBMITTED)
