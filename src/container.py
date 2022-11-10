@@ -79,7 +79,7 @@ class IsabelleRunner:
         logging.info("Start Isabelle...")
         # Prepare and run Isabelle
         # TODO: fix directory hack
-        proc = subprocess.Popen([config.ISABELLE_PATH, "build"]
+        proc = subprocess.Popen([config.ISABELLE_PATH, "build", "-d", "'$AFP'"]
                                 + ["-d" + s for s in session_dirs]
                                 + config.ISABELLE_SETTINGS
                                 + self.names,
