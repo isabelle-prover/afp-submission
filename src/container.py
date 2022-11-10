@@ -5,6 +5,8 @@ import os
 import shutil
 import subprocess
 import threading
+import time
+
 import lxc
 
 import config
@@ -76,10 +78,11 @@ class IsabelleRunner:
         self.run_checks()
         session_dirs = [os.path.join(config.THEORY_DIR, n) for n in self.names]
 
+        time.sleep(5)
         logging.info("Start Isabelle...")
         # Prepare and run Isabelle
         # TODO: fix directory hack
-        proc = subprocess.Popen([config.ISABELLE_PATH, "build", "-d", "'$AFP'"]
+        proc = subprocess.Popen([config.ISABELLE_PATH, "build", "-d", "$AFP"]
                                 + ["-d" + s for s in session_dirs]
                                 + config.ISABELLE_SETTINGS
                                 + self.names,
