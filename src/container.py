@@ -67,29 +67,24 @@ class IsabelleRunner:
         # TODO: run_checks depends on os.chdir/pwd, that's suboptimal
         self.run_checks()
         session_dirs = [os.path.join(config.THEORY_DIR, n) for n in self.names]
+        physical_dirs = os.listdir(config.THEORY_DIR)
+        if not set(physical_dirs) & set(session_dirs):
+            logging.warning("No directory corresponding to entry name in archive.")
+            self.result_writer(Result.FAILED)
+            return
 
-        for f in os.listdir(config.AFP_PATH):
-            try:
-                os.symlink(os.path.join(config.AFP_PATH, f),
-                           os.path.join(config.THEORY_DIR, f))
-            except FileExistsError:
-                logging.warning("An AFP entry named {} already exists".format(f))
-                logging.warning("Please choose a different name.")
-                self.result_writer(Result.FAILED)
-                return
         logging.info("Start Isabelle...")
         # Prepare and run Isabelle
         # TODO: fix directory hack
-        proc = subprocess.Popen([config.ISABELLE_PATH, "build",
-                                 "-d", config.THEORY_DIR]
+        proc = subprocess.Popen([config.ISABELLE_PATH, "build"]
                                 + ["-d" + s for s in session_dirs]
                                 + config.ISABELLE_SETTINGS
                                 + self.names,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 universal_newlines=True)
-        for l in proc.stdout:
-            logging.info(l.strip())
+        for line in proc.stdout:
+            logging.info(line.strip())
         rc = proc.wait()
         if rc == 0:
             self.result_writer(Result.SUCCESS)
@@ -107,11 +102,7 @@ class Container:
 
     def run(self):
         self.prepare()
-        self.thread = threading.Thread(
-            target=self.execute,
-            name=self.entry.name,
-            daemon=True
-        )
+        self.thread = threading.Thread(target=self.execute, name=self.entry.name, daemon=True)
         self.thread.start()
 
     def check(self):
@@ -134,8 +125,7 @@ class Container:
     def path_in_container(self, path):
         # remove slash at the beginning of path
         path = path[1:] if path[0] == "/" else path
-        return os.path.join(config.CONTAINERS_PATH, self.lxc.name,
-                            config.CONTAINER_ROOT, path)
+        return os.path.join(config.CONTAINERS_PATH, self.lxc.name, config.CONTAINER_ROOT, path)
 
     # PRIVATE
 
@@ -163,8 +153,7 @@ class Container:
 
     def prepare(self):
         os.mkdir(self.entry.down())
-        self.lxc = BASE.clone(self.entry.name, bdevtype="overlayfs",
-                              flags=lxc.LXC_CLONE_SNAPSHOT)
+        self.lxc = BASE.clone(self.entry.name, bdevtype="overlayfs", flags=lxc.LXC_CLONE_SNAPSHOT)
         self.start()
         self.lxc.attach_wait(self.setup_container_root_inside)
         self.stop()
@@ -184,15 +173,13 @@ class Container:
                 open(self.entry.down("isabelle.log"), 'w', buffering=1) as l, \
                 open(self.entry.down("checks.log"), 'w', buffering=1) as cl:
             runner = IsabelleRunner(self.entry, af, self.entry.metadata.entries, l, cl)
-            self.lxc.attach_wait(runner.run,
-                                 env_policy=lxc.LXC_ATTACH_CLEAR_ENV,
+            self.lxc.attach_wait(runner.run, env_policy=lxc.LXC_ATTACH_CLEAR_ENV,
                                  uid=1000, gid=1000)
         self.stop()
         # Get browser_info out of container
         if self.entry.get_result() is Result.SUCCESS:
             dst = os.path.join(config.BROWSER_INFO_DIR, self.entry.name)
-            shutil.copytree(self.path_in_container(config.ISABELLE_BROWSER_INFO),
-                            dst)
+            shutil.copytree(self.path_in_container(config.ISABELLE_BROWSER_INFO), dst)
             # remove superfluous index.html
             try:
                 os.remove(os.path.join(dst, "index.html"))

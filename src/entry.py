@@ -152,7 +152,7 @@ class Entry:
         return self.up_check("kill")
 
     def signal_afp(self, sub_status):
-        with self.up(config.AFP_STATUS_FILENAME, mode='w') as f:
+        with self.up("AFP_STATUS", mode='w') as f:
             print(sub_status.name, file=f, flush=True)
 
     def check_mail(self):
