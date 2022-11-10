@@ -71,10 +71,10 @@ def mail_to_editors(entry):
     tp_vals = dict()
     tp_vals["name"] = entry.name
     tp_vals["link"] = entry.link()
-    tp_vals["fullname"] = entry.metadata.entries[0]
+    tp_vals["shortname"] = entry.metadata.entries[0]
     # set status to submitted (even if mail fails)
     entry.signal_afp(AFPStatus.SUBMITTED)
-    send(config.EDITORS, entry.metadata.contact, "[AFP Submission] " + tp_vals["fullname"],
+    send(config.EDITORS, entry.metadata.contact, "[AFP Submission] " + tp_vals["shortname"],
          fill_template(tp_vals, "mails/to_editors.mail.tp"))
 
 
