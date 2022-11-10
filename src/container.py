@@ -63,15 +63,18 @@ class IsabelleRunner:
             return
         os.environ["HOME"] = config.CONTAINER_DIR
         logging.info("Check archive structure")
+        physical_dirs = os.listdir(config.THEORY_DIR)
+        if not set(physical_dirs) == set(self.names):
+            logging.warning("No directory corresponding to entry name in archive.")
+            logging.warning("  Expected: " + ", ".join(self.names))
+            logging.warning("  Got: " + ", ".join(physical_dirs))
+            self.result_writer(Result.FAILED)
+            return
+
         os.chdir(config.THEORY_DIR)
         # TODO: run_checks depends on os.chdir/pwd, that's suboptimal
         self.run_checks()
         session_dirs = [os.path.join(config.THEORY_DIR, n) for n in self.names]
-        physical_dirs = os.listdir(config.THEORY_DIR)
-        if not set(physical_dirs) & set(session_dirs):
-            logging.warning("No directory corresponding to entry name in archive.")
-            self.result_writer(Result.FAILED)
-            return
 
         logging.info("Start Isabelle...")
         # Prepare and run Isabelle
