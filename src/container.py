@@ -67,7 +67,7 @@ class IsabelleRunner:
         logging.info("Check archive structure")
         physical_dirs = os.listdir(config.THEORY_DIR)
         if not set(physical_dirs) == set(self.names):
-            logging.warning("No directory corresponding to entry name in archive.")
+            logging.warning("Directory names do not correspond to entry names.")
             logging.warning("  Expected: " + ", ".join(self.names))
             logging.warning("  Got: " + ", ".join(physical_dirs))
             self.result_writer(Result.FAILED)
