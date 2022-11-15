@@ -66,7 +66,7 @@ class IsabelleRunner:
 
         logging.info("Running session checks...")
 
-        with open(os.path.join(config.THEORY_DIR, "ROOTS")) as f:
+        with open(os.path.join(config.THEORY_DIR, "ROOTS"), mode='w') as f:
             f.write("\n".join(self.names))
 
         if not run_proc(subprocess.Popen(
