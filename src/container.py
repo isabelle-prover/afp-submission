@@ -5,7 +5,6 @@ import os
 import shutil
 import subprocess
 import threading
-import time
 
 import lxc
 
@@ -27,33 +26,6 @@ class IsabelleRunner:
         self.log = log
         self.checks_f = checks_f
 
-    def run_checks(self):
-        # TODO: Use logging or self-defined function instead of print
-        print("Checking for smt, back, sorry, nitpick, quickcheck and nunchacku:",
-              file=self.checks_f)
-        rc = subprocess.call(["grep", "-C 1", "-n", "-e",
-                              "\(smt\|back\|sorry\|nitpick\|quickcheck\|nunchaku\)\($\|[[:space:]]\|)\)",
-                              "-R"],
-                             stdout=self.checks_f)
-        if rc == 1:
-            print("Nothing found", file=self.checks_f)
-        print("\n##############################\n", file=self.checks_f)
-        print("Checking for hidden files:", file=self.checks_f)
-        found = False
-        for path, dirs, files in os.walk('.'):
-            for dn in dirs:
-                if dn.startswith("."):
-                    print("Found hidden directory: " + os.path.join(path, dn),
-                          file=self.checks_f)
-                    found = True
-            for fn in files:
-                if fn.startswith("."):
-                    print("Found hidden file: " + os.path.join(path, fn),
-                          file=self.checks_f)
-                    found = True
-        if not found:
-            print("Found no hidden files or directories", file=self.checks_f)
-
     def run(self):
         logging.basicConfig(stream=self.log,
                             format="%(message)s",
@@ -64,39 +36,57 @@ class IsabelleRunner:
             self.result_writer(Result.FAILED)
             return
         os.environ["HOME"] = config.CONTAINER_DIR
-        logging.info("Check archive structure")
-        physical_dirs = os.listdir(config.THEORY_DIR)
-        if not set(physical_dirs) == set(self.names):
-            logging.warning("Directory names do not correspond to entry names.")
-            logging.warning("  Expected: " + ", ".join(self.names))
-            logging.warning("  Got: " + ", ".join(physical_dirs))
+
+        logging.info("Checking for hidden files")
+        found = False
+        for path, dirs, files in os.walk(config.THEORY_DIR):
+            for dn in dirs:
+                if dn.startswith("."):
+                    logging.warning("Found hidden directory: " + os.path.join(path, dn))
+                    found = True
+            for fn in files:
+                if fn.startswith("."):
+                    logging.warning("Found hidden file: " + os.path.join(path, fn))
+                    found = True
+        if found:
             self.result_writer(Result.FAILED)
             return
-
-        os.chdir(config.THEORY_DIR)
-        # TODO: run_checks depends on os.chdir/pwd, that's suboptimal
-        self.run_checks()
-        session_dirs = [os.path.join(config.THEORY_DIR, n) for n in self.names]
-
-        time.sleep(5)
-        logging.info("Start Isabelle...")
-        # Prepare and run Isabelle
-        # TODO: fix directory hack
-        proc = subprocess.Popen([config.ISABELLE_PATH, "build", "-d", "$AFP"]
-                                + ["-d" + s for s in session_dirs]
-                                + config.ISABELLE_SETTINGS
-                                + self.names,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT,
-                                universal_newlines=True)
-        for line in proc.stdout:
-            logging.info(line.strip())
-        rc = proc.wait()
-        if rc == 0:
-            self.result_writer(Result.SUCCESS)
         else:
-            logging.warning("Isabelle failed with return code: {:d}".format(rc))
-            self.result_writer(Result.FAILED)
+            logging.info("Found no hidden files or directories")
+
+        def run_proc(proc):
+            for line in proc.stdout:
+                logging.info(line.strip())
+            rc = proc.wait()
+            if rc != 0:
+                self.result_writer(Result.FAILED)
+                return False
+            else:
+                return True
+
+        logging.info("Running session checks...")
+
+        with open(os.path.join(config.THEORY_DIR, "ROOTS")) as f:
+            f.write("\n".join(self.names))
+
+        if not run_proc(subprocess.Popen(
+                [config.ISABELLE_PATH, "afp_check_roots", "-D" + config.THEORY_DIR],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True)):
+            return
+
+        logging.info("Start Isabelle...")
+        if not run_proc(subprocess.Popen(
+                [config.ISABELLE_PATH, "build", "-d", "$AFP", "-d" + config.THEORY_DIR]
+                + config.ISABELLE_SETTINGS
+                + self.names,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True)):
+            return
+        # All checks succeeded
+        self.result_writer(Result.SUCCESS)
 
 
 ##TODO: catch ALL (yes, all) possible errors :)
