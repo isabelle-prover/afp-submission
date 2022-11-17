@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import threading
+import time
 
 import lxc
 
@@ -68,6 +69,10 @@ class IsabelleRunner:
 
         with open(os.path.join(config.THEORY_DIR, "ROOTS"), mode='w') as f:
             f.write("\n".join(self.names))
+
+        # TODO fix lxc problem
+        # sleep to prevent spurious tmp error
+        time.sleep(3)
 
         if not run_proc(subprocess.Popen(
                 [config.ISABELLE_PATH, "afp_check_roots", "-D" + config.THEORY_DIR],
