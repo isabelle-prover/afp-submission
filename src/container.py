@@ -55,6 +55,11 @@ class IsabelleRunner:
         else:
             logging.info("Found no hidden files or directories")
 
+        if not set(os.listdir(config.THEORY_DIR)) == set(self.names):
+            logging.warning("Directory names do not correspond to entry names.")
+            logging.warning("  Expected: " + ", ".join(self.names))
+            logging.warning("  Got: " + ", ".join(os.listdir(config.THEORY_DIR)))
+
         def run_proc(proc):
             for line in proc.stdout:
                 logging.info(line.strip())
