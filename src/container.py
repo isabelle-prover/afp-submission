@@ -96,16 +96,26 @@ class IsabelleRunner:
                 universal_newlines=True)):
             return
 
-        logging.info("Linting...")
+        logging.info("Checking AFP Guidelines...")
         if not run_proc(subprocess.Popen(
                 [config.ISABELLE_PATH, "lint", "-d", "$AFP", "-d" + config.THEORY_DIR,
-                 "-o", "lint_bundles=afp_mandatory"]
+                 "-o", "lint_bundles=afp_mandatory", "-f", "error"]
                 + config.ISABELLE_SETTINGS
                 + self.names,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 universal_newlines=True)):
             return
+
+        logging.info("Linting for maintainable and readable proofs...")
+        run_proc(subprocess.Popen(
+                [config.ISABELLE_PATH, "lint", "-d", "$AFP", "-d" + config.THEORY_DIR]
+                + config.ISABELLE_SETTINGS
+                + self.names,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True))
+
         # All checks succeeded
         self.result_writer(Result.SUCCESS)
 
