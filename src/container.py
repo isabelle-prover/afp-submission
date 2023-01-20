@@ -99,7 +99,7 @@ class IsabelleRunner:
         logging.info("Checking AFP Guidelines...")
         if not run_proc(subprocess.Popen(
                 [config.ISABELLE_PATH, "lint", "-d", "$AFP", "-d" + config.THEORY_DIR,
-                 "-o", "lint_bundles=afp_mandatory", "-f", "error"]
+                 "-o", "lint_bundles=afp_mandatory", "-f", "error", "-r", "afp"]
                 + config.ISABELLE_SETTINGS
                 + self.names,
                 stdout=subprocess.PIPE,
@@ -111,7 +111,8 @@ class IsabelleRunner:
         run_proc(subprocess.Popen(
                 [config.ISABELLE_PATH, "lint", "-d", "$AFP", "-d" + config.THEORY_DIR,
                  "-o", "lint_bundles=foundational,non_interactive_addon",
-                 "-o", "lints_disabled=implicit_rule,lemma_transforming_attribute,auto_structural_composition"]
+                 "-o", "lints_disabled=implicit_rule,lemma_transforming_attribute,auto_structural_composition",
+                 "-r", "afp"]
                 + config.ISABELLE_SETTINGS
                 + self.names,
                 stdout=subprocess.PIPE,
