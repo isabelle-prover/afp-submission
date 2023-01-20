@@ -109,7 +109,9 @@ class IsabelleRunner:
 
         logging.info("Linting for maintainable and readable proofs...")
         run_proc(subprocess.Popen(
-                [config.ISABELLE_PATH, "lint", "-d", "$AFP", "-d" + config.THEORY_DIR]
+                [config.ISABELLE_PATH, "lint", "-d", "$AFP", "-d" + config.THEORY_DIR,
+                 "-o", "lint_bundles=foundational,non_interactive_addon",
+                 "-o", "lints_disabled=implicit_rule,lemma_transforming_attribute,auto_structural_composition"]
                 + config.ISABELLE_SETTINGS
                 + self.names,
                 stdout=subprocess.PIPE,
