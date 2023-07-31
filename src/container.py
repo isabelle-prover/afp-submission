@@ -62,7 +62,8 @@ class IsabelleRunner:
 
         def run_proc(proc):
             for line in proc.stdout:
-                logging.info(line.strip())
+                if not line.strip().startswith("Presenting "):
+                    logging.info(line.strip())
             rc = proc.wait()
             if rc != 0:
                 self.result_writer(Result.FAILED)
@@ -100,7 +101,6 @@ class IsabelleRunner:
         if not run_proc(subprocess.Popen(
                 [config.ISABELLE_PATH, "lint", "-d", "$AFP", "-d" + config.THEORY_DIR,
                  "-o", "lint_bundles=afp_mandatory", "-f", "error", "-r", "afp"]
-                + config.ISABELLE_SETTINGS
                 + self.names,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -113,7 +113,6 @@ class IsabelleRunner:
                  "-o", "lint_bundles=foundational,non_interactive_addon",
                  "-o", "lints_disabled=implicit_rule,lemma_transforming_attribute,auto_structural_composition",
                  "-r", "afp"]
-                + config.ISABELLE_SETTINGS
                 + self.names,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
