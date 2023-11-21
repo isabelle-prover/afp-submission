@@ -18,7 +18,7 @@ def email_regex(addr):
     return re.match(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", addr)
 
 
-def send(tos, ccs, subject, text):
+def send(tos, ccs, subject, text, reply_tos=None):
     try:
         if config.MAILSSL:
             smtp = smtplib.SMTP_SSL(host=config.MAILSERVER, port=config.MAILSERVERPORT,
@@ -34,6 +34,8 @@ def send(tos, ccs, subject, text):
     msg['From'] = config.FROM
     msg['Sender'] = config.SENDER
     msg['Date'] = formatdate(localtime=True)
+    if reply_tos is not None:
+        msg['Reply-To'] = reply_tos
     try:
         if all([email_regex(r) for r in tos + ccs]):
             msg['To'] = ",".join(tos)
@@ -75,7 +77,7 @@ def mail_to_editors(entry):
     # set status to submitted (even if mail fails)
     entry.signal_afp(AFPStatus.SUBMITTED)
     send(config.EDITORS, entry.metadata.contact, "[AFP Submission] " + tp_vals["shortname"],
-         fill_template(tp_vals, "mails/to_editors.mail.tp"))
+         fill_template(tp_vals, "mails/to_editors.mail.tp"), config.EDITORS)
 
 
 def submitted(entry):
