@@ -35,9 +35,12 @@ def send(tos, ccs, subject, text, reply_tos=None):
     msg['Sender'] = config.SENDER
     msg['Date'] = formatdate(localtime=True)
     if reply_tos is not None:
-        msg['Reply-To'] = reply_tos
+        reply_to_ok = all([email_regex(r) for r in reply_tos])
+        msg['Reply-To'] = ",".join(reply_tos)
+    else:
+        reply_to_ok = True
     try:
-        if all([email_regex(r) for r in tos + ccs]):
+        if all([email_regex(r) for r in tos + ccs]) and reply_to_ok:
             msg['To'] = ",".join(tos)
             msg['CC'] = ",".join(ccs)
             msg['BCC'] = ",".join(config.ADMINS)
