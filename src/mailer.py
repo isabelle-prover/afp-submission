@@ -23,7 +23,8 @@ def send(tos, ccs, subject, text, reply_tos=None):
         if config.MAILSSL:
             smtp = smtplib.SMTP_SSL(host=config.MAILSERVER, port=config.MAILSERVERPORT,
                                     context=ssl.create_default_context())
-            smtp.login(config.MAILUSER, config.MAILPASS)
+            if config.MAILUSER and config.MAILPASS:
+                smtp.login(config.MAILUSER, config.MAILPASS)
         else:
             smtp = smtplib.SMTP(host=config.MAILSERVER, port=config.MAILSERVERPORT)
     except (smtplib.SMTPException, ssl.SSLError, ConnectionError):
