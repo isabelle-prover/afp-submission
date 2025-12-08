@@ -39,7 +39,7 @@ class IsabelleRunner:
         os.environ["HOME"] = config.CONTAINER_DIR
 
         logging.info("Checking for hidden files")
-        for path, dirs, files in os.walk("."):
+        for path, dirs, files in os.walk(config.THEORY_DIR):
             for fn in files:
                 if fn.startswith("."):
                     fp = os.path.join(path, fn)
