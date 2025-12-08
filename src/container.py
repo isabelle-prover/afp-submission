@@ -55,9 +55,8 @@ class IsabelleRunner:
                     found = True
         if found:
             logging.warning("Found hidden files or directories. Recreating archive...")
-            shutil.rmtree(self.archive.filename)
-            (base_file, ext) = os.path.splitext(self.archive.filename)
-            shutil.make_archive(base_file, 'zip', root_dir=config.THEORY_DIR)
+            new_archive = os.path.join(config.THEORY_DIR, "archive")
+            shutil.make_archive(new_archive, self.archive.format(), root_dir=config.THEORY_DIR)
 
         if not set(os.listdir(config.THEORY_DIR)) == set(self.names):
             logging.warning("Directory names do not correspond to entry names.")
@@ -208,13 +207,17 @@ class Container:
             runner = IsabelleRunner(self.entry, af, self.entry.metadata.entries, l, cl)
             self.lxc.attach_wait(runner.run, env_policy=lxc.LXC_ATTACH_CLEAR_ENV,
                                  uid=1000, gid=1000)
-        self.stop()
-        # Get browser_info out of container
-        if self.entry.get_result() is Result.SUCCESS:
-            dst = os.path.join(config.BROWSER_INFO_DIR, self.entry.name)
-            shutil.copytree(self.path_in_container(config.ISABELLE_BROWSER_INFO), dst)
-            # remove superfluous index.html
-            try:
-                os.remove(os.path.join(dst, "index.html"))
-            except FileNotFoundError:
-                pass
+            self.stop()
+            # Get browser_info and archive out of container
+            if self.entry.get_result() is Result.SUCCESS:
+                dst = os.path.join(config.BROWSER_INFO_DIR, self.entry.name)
+                shutil.copytree(self.path_in_container(config.ISABELLE_BROWSER_INFO), dst)
+                # remove superfluous index.html
+                try:
+                    os.remove(os.path.join(dst, "index.html"))
+                except FileNotFoundError:
+                    pass
+                container_af = self.path_in_container(
+                    os.path.join(config.THEORY_DIR, os.path.basename(af.filename)))
+                if os.path.isfile(container_af):
+                    shutil.copy(container_af, af.filename)

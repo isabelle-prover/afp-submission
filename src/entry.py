@@ -70,12 +70,18 @@ class ArchiveFile:
     def __exit__(self, t, v, traceback):
         self.fileobj.close()
 
+    def format(self):
+        raise NotImplementedError()
+
     def extract(self, dir):
         raise NotImplementedError()
 
 
 class TarArchiveFile(ArchiveFile):
     archive_name = "archive.tar.gz"
+
+    def format(self):
+        return "gztar"
 
     def extract(self, dir):
         try:
@@ -88,6 +94,9 @@ class TarArchiveFile(ArchiveFile):
 
 class ZipArchiveFile(ArchiveFile):
     archive_name = "archive.zip"
+
+    def format(self):
+        return "zip"
 
     def extract(self, dir):
         try:
