@@ -55,7 +55,7 @@ class IsabelleRunner:
                     found = True
         if found:
             logging.warning("Found hidden files or directories. Recreating archive...")
-            new_archive = os.path.join(config.THEORY_DIR, "archive")
+            new_archive = os.path.join(config.CONTAINER_DIR, "archive")
             shutil.make_archive(new_archive, self.archive.format(), root_dir=config.THEORY_DIR)
 
         if not set(os.listdir(config.THEORY_DIR)) == set(self.names):
@@ -218,6 +218,6 @@ class Container:
                 except FileNotFoundError:
                     pass
                 container_af = self.path_in_container(
-                    os.path.join(config.THEORY_DIR, os.path.basename(af.filename)))
+                    os.path.join(config.CONTAINER_DIR, os.path.basename(af.filename)))
                 if os.path.isfile(container_af):
                     shutil.copy(container_af, af.filename)
