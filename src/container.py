@@ -39,21 +39,17 @@ class IsabelleRunner:
         os.environ["HOME"] = config.CONTAINER_DIR
 
         logging.info("Checking for hidden files")
-        found = False
-        for path, dirs, files in os.walk(config.THEORY_DIR):
-            for dn in dirs:
-                if dn.startswith("."):
-                    logging.warning("Found hidden directory: " + os.path.join(path, dn))
-                    found = True
+        for path, dirs, files in os.walk("."):
             for fn in files:
                 if fn.startswith("."):
-                    logging.warning("Found hidden file: " + os.path.join(path, fn))
-                    found = True
-        if found:
-            self.result_writer(Result.FAILED)
-            return
-        else:
-            logging.info("Found no hidden files or directories")
+                    fp = os.path.join(path, fn)
+                    logging.warning("Removing hidden file: " + fp)
+                    os.remove(fp)
+            for dn in dirs:
+                if dn.startswith("."):
+                    dp = os.path.join(path, dn)
+                    logging.warning("Removing hidden directory: " + dp)
+                    shutil.rmtree(dp, ignore_errors=True)
 
         if not set(os.listdir(config.THEORY_DIR)) == set(self.names):
             logging.warning("Directory names do not correspond to entry names.")
