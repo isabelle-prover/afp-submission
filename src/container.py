@@ -39,17 +39,25 @@ class IsabelleRunner:
         os.environ["HOME"] = config.CONTAINER_DIR
 
         logging.info("Checking for hidden files")
+        found = False
         for path, dirs, files in os.walk(config.THEORY_DIR):
             for fn in files:
                 if fn.startswith("."):
                     fp = os.path.join(path, fn)
                     logging.warning("Removing hidden file: " + fp)
                     os.remove(fp)
+                    found = True
             for dn in dirs:
                 if dn.startswith("."):
                     dp = os.path.join(path, dn)
                     logging.warning("Removing hidden directory: " + dp)
                     shutil.rmtree(dp, ignore_errors=True)
+                    found = True
+        if found:
+            logging.warning("Found hidden files or directories. Recreating archive...")
+            shutil.rmtree(self.archive.filename)
+            (base_file, ext) = os.path.splitext(self.archive.filename)
+            shutil.make_archive(base_file, 'zip', root_dir=config.THEORY_DIR)
 
         if not set(os.listdir(config.THEORY_DIR)) == set(self.names):
             logging.warning("Directory names do not correspond to entry names.")
