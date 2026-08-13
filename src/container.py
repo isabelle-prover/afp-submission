@@ -92,9 +92,8 @@ class IsabelleRunner:
 
         logging.info("Start Isabelle...")
         if not run_proc(subprocess.Popen(
-                [config.ISABELLE_PATH, "build", "-d", "$AFP", "-d" + config.THEORY_DIR]
-                + config.ISABELLE_SETTINGS
-                + self.names,
+                [config.ISABELLE_PATH, "build", "-d", "$AFP", "-D" + config.THEORY_DIR]
+                + config.ISABELLE_SETTINGS,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 universal_newlines=True)):
@@ -102,9 +101,8 @@ class IsabelleRunner:
 
         logging.info("Checking AFP Guidelines...")
         if not run_proc(subprocess.Popen(
-                [config.ISABELLE_PATH, "lint", "-d", "$AFP", "-d" + config.THEORY_DIR,
-                 "-o", "lint_bundles=afp_mandatory", "-f", "error", "-r", "afp"]
-                + self.names,
+                [config.ISABELLE_PATH, "lint", "-d", "$AFP", "-D" + config.THEORY_DIR,
+                 "-o", "lint_bundles=afp_mandatory", "-f", "error", "-r", "afp"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 universal_newlines=True)):
@@ -112,11 +110,10 @@ class IsabelleRunner:
 
         logging.info("Linting for maintainable and readable proofs...")
         run_proc(subprocess.Popen(
-                [config.ISABELLE_PATH, "lint", "-d", "$AFP", "-d" + config.THEORY_DIR,
+                [config.ISABELLE_PATH, "lint", "-d", "$AFP", "-D" + config.THEORY_DIR,
                  "-o", "lint_bundles=foundational,non_interactive_addon",
                  "-o", "lints_disabled=implicit_rule,lemma_transforming_attribute,auto_structural_composition",
-                 "-r", "afp"]
-                + self.names,
+                 "-r", "afp"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 universal_newlines=True))
@@ -212,11 +209,6 @@ class Container:
             if self.entry.get_result() is Result.SUCCESS:
                 dst = os.path.join(config.BROWSER_INFO_DIR, self.entry.name)
                 shutil.copytree(self.path_in_container(config.ISABELLE_BROWSER_INFO), dst)
-                # remove superfluous index.html
-                try:
-                    os.remove(os.path.join(dst, "index.html"))
-                except FileNotFoundError:
-                    pass
                 container_af = self.path_in_container(
                     os.path.join(config.CONTAINER_DIR, os.path.basename(af.filename)))
                 if os.path.isfile(container_af):
